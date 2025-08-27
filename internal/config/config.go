@@ -9,7 +9,7 @@ import (
 )
 
 type HTTPServer struct {
-	Addr string
+	Addr string `yaml:"address" ` // add yaml tag
 }
 
 //env-default:":production"
