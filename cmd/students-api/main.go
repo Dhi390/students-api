@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Dhi390/students-api/internal/config"
+	"github.com/Dhi390/students-api/internal/http/handlers/students"
 )
 
 func main() {
@@ -27,13 +28,8 @@ func main() {
 	//setup router
 
 	router := http.NewServeMux()
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		w.Write([]byte("Welcome to Students API"))
-	})
+
+	router.HandleFunc("POST /api/students", students.New())
 
 	//setup server
 
