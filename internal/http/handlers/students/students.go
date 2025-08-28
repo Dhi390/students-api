@@ -7,13 +7,15 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
+	"github.com/Dhi390/students-api/internal/storage"
 	"github.com/Dhi390/students-api/internal/types"
 	"github.com/Dhi390/students-api/internal/utils/responce"
 	"github.com/go-playground/validator/v10"
 )
 
-func New() http.HandlerFunc {
+func New(storage storage.Storage) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -34,7 +36,7 @@ func New() http.HandlerFunc {
 			return
 		}
 
-		//request validation*--->using go-playground/validator
+		//REQUEST VALIDATION*--->using go-playground/validator
 
 		if err := validator.New().Struct(student); err != nil {
 
@@ -43,7 +45,48 @@ func New() http.HandlerFunc {
 			return
 		}
 
-		responce.WriteJSON(w, http.StatusCreated, map[string]string{"success": "ok"})
+		lastId, err := storage.CreateStudent(
+			student.Name,
+			student.Email,
+			student.Age,
+		)
+
+		slog.Info("user created successfully", slog.String("userId", fmt.Sprint(lastId)))
+
+		if err != nil {
+			responce.WriteJSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		responce.WriteJSON(w, http.StatusCreated, map[string]int64{"id": lastId})
+
+	}
+}
+
+func GetById(storage storage.Storage) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		id := r.PathValue("id")
+
+		slog.Info("getting a student", slog.String("id", id))
+
+		intId, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			responce.WriteJSON(w, http.StatusBadRequest, responce.GeneralError(err))
+			return
+		}
+
+		student, err := storage.GetStudentById(intId)
+
+		if err != nil {
+			slog.Error("error getting user", slog.String("id", "id"))
+			responce.WriteJSON(w, http.StatusInternalServerError, responce.GeneralError(err))
+			return
+
+		}
+
+		responce.WriteJSON(w, http.StatusOK, student)
 
 	}
 }
